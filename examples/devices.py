@@ -38,6 +38,8 @@ myoimu
     Myo armband IMU channels. Requires ``myo-python`` and ``pydaqs``.
 nidaq
     NIDAQ device. Requires ``nidaqmx`` and ``pydaqs``.
+arduino
+    Arduino DAQ device. Requires ``pydaqs``.
 blackrock
     Blackrock Neuroport device. Requires ``cbpy`` and ``pydaqs``.
 cyberglove
