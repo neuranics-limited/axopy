@@ -2,16 +2,21 @@
 Async daqs
 ==========
 
-This examples demonstrates the use of multiple daq devices in an asyncrhonised
-fashion. Daqs do not need to have sampling rates that are integer multiples of
-one another, yet, it makes sense to set their read_sizes such that it takes
-"roughly" the same time to perform a read operation from the various devices.
-A DumbDaq is used as a master daq to control the main program update rate.
-We might want to set the properties of the master daq to be equal to that of
-the "faster" of the real daqs. This is however not strict; we could also set
-the read time of the master daq to be even faster (but not slower). In that
-case, we would end up with correlated samples as we sample faster than the daqs
-are providing data.
+This examples demonstrates the use of multiple daq devices in a synchronised
+fashion. To synchronise the two daqs, we have to oversample the slower one.
+Daqs need not have sampling rates that are integer multiples of one another,
+yet, it makes sense to set their read_sizes such that it takes "roughly" the
+same time to perform a read operation from the various devices. A DumbDaq is
+used as a master daq to control the main program update rate (i.e. master
+clock). We might want to set the properties of the master daq to be equal to
+that of the faster of the real daqs. This is however not strict; we could
+also set the read time of the  master daq to be even faster (but not slower).
+In that case, we would end up also oversampling the faster daq. An alternative
+would be to use the faster daq as the master daq. When each daq is updated
+we store its values in a cache. When the master clock ticks, the cache from
+each daq is queried. Note that by "fast" and "slow", we do not refer to the
+sampling rate of the daq, but rather the time needed to complete a `read()`
+operation, which is dependent on both the rate and the read_size.
 
 The example demonstrates how to store the raw data from the multiple devices
 and also how to combine (through concatenation) and store their processed data.
@@ -60,7 +65,7 @@ class CountTask(Task):
         }
         # This is where the data from the multiple streams will be stored
         # after they have been processed.
-        self.cur_data = {'daq_1': None, 'daq_2': None}
+        self.cache = {'daq_1': None, 'daq_2': None}
 
     def make_pipeline(self, rate, readsize, winsize, lowpass, highpass):
         b, a = butter(4, (lowpass/rate/2., highpass/rate/2.), 'bandpass')
@@ -97,7 +102,7 @@ class CountTask(Task):
     def prepare_daq(self, daqstream):
         # The master counter will determine trial time, i.e.
         # trial_time = counter_limit * read_daq / rate_daq
-        self.counter0 = Counter(100, reset_on_timeout=False)
+        self.counter0 = Counter(101, reset_on_timeout=False)
         self.counter1 = Counter(1000)
         self.counter2 = Counter(1000)
 
@@ -125,9 +130,9 @@ class CountTask(Task):
         # Daq 0 is the "master" Daq, i.e. an update happens when daq 0 is
         # updated. The check is used to ensure that updates start only after
         # the two streams have started providing data.
-        if not any(elem is None for elem in self.cur_data.values()):
-            daq1data = self.cur_data['daq_1'].copy()
-            daq2data = self.cur_data['daq_2'].copy()
+        if not any(elem is None for elem in self.cache.values()):
+            daq1data = self.cache['daq_1'].copy()
+            daq2data = self.cache['daq_2'].copy()
             data_c = np.concatenate((daq1data, daq2data), axis=0)
 
             self.trial.arrays['dev_12_processed'].stack(data_c)
@@ -140,7 +145,7 @@ class CountTask(Task):
         self.text1.qitem.setText("Daq 1: " + str(self.counter1.count))
 
         data_proc = self.pipeline['daq_1'].process(data)
-        self.cur_data['daq_1'] = data_proc
+        self.cache['daq_1'] = data_proc
         self.trial.arrays['dev_1_raw'].stack(data)
 
     def update_daq2(self, data):
@@ -148,7 +153,7 @@ class CountTask(Task):
         self.text2.qitem.setText("Daq 2: " + str(self.counter2.count))
 
         data_proc = self.pipeline['daq_2'].process(data)
-        self.cur_data['daq_2'] = data_proc
+        self.cache['daq_2'] = data_proc
         self.trial.arrays['dev_2_raw'].stack(data)
 
     def finish_trial(self):
@@ -163,13 +168,13 @@ class CountTask(Task):
         self.daqstream['daq_1'].stop(wait=False)
         self.daqstream['daq_2'].stop(wait=False)
 
-        self.next_trial()
+        self.finish()
 
 
 if __name__ == '__main__':
     from axopy.daq import NoiseGenerator, DumbDaq
     rate = {'daq_0': 1000, 'daq_1': 2000, 'daq_2': 42}
-    readsize = {'daq_0': 100, 'daq_1': 200, 'daq_2': 4}
+    readsize = {'daq_0': 100, 'daq_1': 200, 'daq_2': 10}
 
     daq0 = DumbDaq(rate=rate['daq_0'], read_size=readsize['daq_0'])
     daq1 = NoiseGenerator(num_channels=4, rate=rate['daq_1'],
