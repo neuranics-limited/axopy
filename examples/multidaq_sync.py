@@ -1,6 +1,6 @@
 """
-Async daqs
-==========
+Synchronised multiple daqs
+==========================
 
 This examples demonstrates the use of multiple daq devices in a synchronised
 fashion. To synchronise the two daqs, we have to oversample the slower one.
