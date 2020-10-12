@@ -139,6 +139,18 @@ class Trial(object):
         """
         self.arrays[name] = Array(**kwargs)
 
+    def add_bufferedarray(self, name, **kwargs):
+        """Add a buffered array to the trial.
+
+        Parameters
+        ----------
+        name : str
+            Name of the array.
+        kwargs : dict
+            Keyword arguments passed along to :class:`BufferedArray`.
+        """
+        self.arrays[name] = BufferedArray(**kwargs)
+
     def __str__(self):
         return pprint.pformat(self.attrs)
 
@@ -198,3 +210,102 @@ class Array(object):
         Anything that was in the buffer is not retrievable.
         """
         self.data = None
+
+
+class BufferedArray(object):
+    """Trial array.
+
+    The buffered array preallocates an array an insert method for adding new
+    data. The size of the buffer must be set manually. This is useful in cases
+    where you are iteratively collecting new segments of data and you would
+    like to record for longer periods of time. For example, you could use a
+    :class:`BufferedArray` to collect samples from a data acquisition device
+    as they come in for rather a long time and things should not start to lag
+    because memory has already been allocated.
+
+    The attribute data is empty until :meth:`BufferedArray.set_data` is
+    called. If the size of the buffer is exceeded data will be empty.
+
+    You usually don't need to create an buffered array manually -- instead,
+    use :meth:`Trial.add_bufferedarray`.
+
+    Parameters
+    ----------
+    buffer_dims: tuple(int, int, int)
+        Tuple to determine the size of the buffered array.
+
+    insert_axis : int, optional
+        Axis to insert the data along.
+
+    dtype : str, optional
+        Array data type. Default is 'f'.
+
+    Attributes
+    ----------
+    data : ndarray, optional
+        The NumPy array holding the data.
+    """
+
+    def __init__(self, buffer_dims=(8, 10), insert_axis=1, dtype='f'):
+        self.insert_axis = insert_axis
+        self.dtype = dtype
+        self.buffer_dims = buffer_dims
+        self.buffer = numpy.zeros(buffer_dims, self.dtype)
+        self.pos = 0
+        self.overflow = False
+        self.data = numpy.empty((0, 0))
+
+    def insert(self, data):
+        """Insert new data into the buffer.
+
+        Parameters
+        ----------
+        data : ndarray
+            New data to add. The direction to insert on is specified in the
+            array's constructor (insert_axis).
+        """
+        if self.overflow:
+            return
+
+        new_sample = data.shape[self.insert_axis]
+        new_pos = self.pos + new_sample
+        if (new_pos > self.buffer_dims[self.insert_axis]):
+            self.overflow = True
+            return
+
+        # about as stupid as Axopy's arbitrary stack dims
+        idx = slice(self.pos, new_pos)
+        if (self.insert_axis == 0):
+            self.buffer[idx, :] = data
+        elif(self.insert_axis == 1):
+            self.buffer[:, idx] = data
+        elif(self.insert_axis == 2):
+            self.buffer[:, :, idx] = data
+
+        self.pos += new_sample
+
+    def clear(self):
+        """Clears the buffer and resets the interator
+
+        Anything that was in the buffer is not retrievable.
+        """
+        self.buffer.fill(0)
+        self.pos = 0
+        self.overflow = False
+        self.data = numpy.empty((0, 0))
+
+    def set_data(self):
+        """Creates the data attribute.
+
+        In the case of overflow data will be empty.
+        """
+        if self.overflow:
+            return
+
+        idx = slice(0, self.pos)
+        if (self.insert_axis == 0):
+            self.data = self.buffer[idx, :]
+        elif(self.insert_axis == 1):
+            self.data = self.buffer[:, idx]
+        elif(self.insert_axis == 2):
+            self.data = self.buffer[:, :, idx]
