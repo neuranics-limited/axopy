@@ -267,7 +267,11 @@ class BufferedArray(object):
         if self.overflow:
             return
 
-        new_sample = data.shape[self.insert_axis]
+        if data.ndim > 1:
+            new_sample = data.shape[self.insert_axis]
+        else:
+            new_sample = 1
+
         new_pos = self.pos + new_sample
         if (new_pos > self.buffer_dims[self.insert_axis]):
             self.overflow = True
