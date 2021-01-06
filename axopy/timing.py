@@ -122,7 +122,7 @@ class StepCounter(Counter):
     # https://stackoverflow.com/questions/38506979/creating-an-array-of-pyqtsignal 
     step_max = 10
     for i in range(step_max):
-        vars()['phase' + str(i)] = Transmitter()
+        vars()['step' + str(i)] = Transmitter()
 
     def __init__(self, max_count=1, reset_on_timeout=True):
         super(StepCounter, self).__init__(max_count, reset_on_timeout)
@@ -133,9 +133,9 @@ class StepCounter(Counter):
         pass
 
     def add_step(self, count=0, event=_dummy):
-        """Add a phase if we have enough emitters."""
+        """Add a step if we have enough emitters."""
         if (self.step_inc < self.step_max):
-            getattr(self, 'stage' + str(self.step_inc)).connect(event)
+            getattr(self, 'step' + str(self.step_inc)).connect(event)
             self.step_count.append(count)
             self.step_inc += 1
 
@@ -153,7 +153,7 @@ class StepCounter(Counter):
 
         if self.count in self.step_count:
             _index = self.step_count.index(self.count)
-            getattr(self, 'stage' + str(_index)).emit()
+            getattr(self, 'step' + str(_index)).emit()
 
         if self.count == self.max_count:
             if self.reset_on_timeout:
