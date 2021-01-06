@@ -104,7 +104,7 @@ class StepCounter(Counter):
     Basic usage:
 
     >>> from axopy.timing import StepCounter
-    >>> timer = Counter(3)
+    >>> timer = StepCounter(3)
     >>> timer.add_step(1, function1)
     >>> timer.add_step(2, function2)
     >>> timer.increment()
