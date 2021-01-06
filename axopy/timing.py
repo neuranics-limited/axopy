@@ -78,6 +78,89 @@ class Counter(TransmitterBase):
         self.count = 0
 
 
+class StepCounter(Counter):
+    """Multiple step counter.
+       Counts to a given number then transmits a timeout event.
+       Transmits events at multiple values up to timeout.
+
+    Parameters
+    ----------
+    max_count : int
+        Number of iterations to go through before transmitting the `timeout`
+        event. Must be greater than 1.
+    reset_on_timeout : bool, optional
+        Specifies whether or not the timer should reset its count back to zero
+        once the timeout event occurs. The default behavior is to reset.
+
+    Attributes
+    ----------
+    count : int
+        Current count.
+    timeout : Transmitter
+        Transmitted when ``max_count`` has been reached.
+
+    Examples
+    --------
+    Basic usage:
+
+    >>> from axopy.timing import StepCounter
+    >>> timer = Counter(3)
+    >>> timer.add_step(1, function1)
+    >>> timer.add_step(2, function2)
+    >>> timer.increment()
+    "function 1"
+    >>> timer.increment()
+    "function 2"
+    >>> timer.increment()
+    >>> timer.count
+    0
+    """
+
+    timeout = Transmitter()
+
+    # README: No way to create an array of pyqtSignal(s) ...
+    # https://stackoverflow.com/questions/38506979/creating-an-array-of-pyqtsignal 
+    step_max = 10
+    for i in range(step_max):
+        vars()['phase' + str(i)] = Transmitter()
+
+    def __init__(self, max_count=1, reset_on_timeout=True):
+        super(StepCounter, self).__init__(max_count, reset_on_timeout)
+        self.step_inc = 0
+        self.step_count = []
+
+    def _dummy():
+        pass
+
+    def add_step(self, count=0, event=_dummy):
+        """Add a phase if we have enough emitters."""
+        if (self.step_inc < self.step_max):
+            getattr(self, 'stage' + str(self.step_inc)).connect(event)
+            self.step_count.append(count)
+            self.step_inc += 1
+
+    def increment(self):
+        """Increment the counter.
+
+        If a count is reached which is found in `step_count` the event
+        associated with the count is tranmitted.
+
+        If `max_count` is reached, the ``timeout`` event is transmitted. If
+        `reset_on_timeout` has been set to True (default), the timer is also
+        reset.
+        """
+        self.count += 1
+
+        if self.count in self.step_count:
+            _index = self.step_count.index(self.count)
+            getattr(self, 'stage' + str(_index)).emit()
+
+        if self.count == self.max_count:
+            if self.reset_on_timeout:
+                self.reset()
+            self.timeout.emit()
+
+
 class Timer(TransmitterBase):
     """Real-time one-shot timer.
 
