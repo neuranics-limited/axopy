@@ -38,7 +38,6 @@ class DebugPrinter(object):
 
 
 class TimingTask(Task):
-
     def __init__(self):
         super(TimingTask, self).__init__()
         self.prepare_timer()
@@ -82,11 +81,11 @@ class TimingTask(Task):
             Main change is trial stage specific
             updates are then called from here, rather than
             connecting the daq to a different update function."""
-        if (self.trial_stage == 1):
+        if self.trial_stage == 1:
             pass
-        elif (self.trial_stage == 2):
+        elif self.trial_stage == 2:
             pass
-        elif (self.trial_stage == 3):
+        elif self.trial_stage == 3:
             pass
 
     def run_trial(self, trial):

@@ -129,12 +129,14 @@ class StepCounter(Counter):
         self.step_inc = 0
         self.step_count = []
 
+    @staticmethod
     def _dummy():
+        """A default method for add_step."""
         pass
 
     def add_step(self, count=0, event=_dummy):
         """Add a step if we have enough emitters."""
-        if (self.step_inc < self.step_max):
+        if self.step_inc < self.step_max:
             getattr(self, 'step' + str(self.step_inc)).connect(event)
             self.step_count.append(count)
             self.step_inc += 1
@@ -143,7 +145,7 @@ class StepCounter(Counter):
         """Increment the counter.
 
         If a count is reached which is found in `step_count` the event
-        associated with the count is tranmitted.
+        associated with the count is transmitted.
 
         If `max_count` is reached, the ``timeout`` event is transmitted. If
         `reset_on_timeout` has been set to True (default), the timer is also
