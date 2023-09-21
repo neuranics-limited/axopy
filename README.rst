@@ -1,4 +1,4 @@
-This is the Intelligent Sensing fork of `axopy <https://github.com/axopy/axopy>`_.
+This is the Neuranics fork of `axopy <https://github.com/axopy/axopy>`_.
 
 .. image:: https://github.com/axopy/axopy/raw/master/docs/_static/axopy.png
    :alt: AxoPy Logo
