@@ -1,4 +1,4 @@
-This is the Neuranics fork of `axopy <https://github.com/axopy/axopy>`, from the `Intelligent Sensing version <https://github.com/intellsensing/axopy>` _.
+This is the Neuranics fork of `axopy <https://github.com/axopy/axopy>`_, from the `Intelligent Sensing version <https://github.com/intellsensing/axopy>`_.
 
 
 .. image:: https://github.com/axopy/axopy/raw/master/docs/_static/axopy.png
@@ -10,9 +10,9 @@ This is the Neuranics fork of `axopy <https://github.com/axopy/axopy>`, from the
     :target: https://doi.org/10.21105/joss.01191
     :alt: JOSS Paper
 
-.. image:: https://travis-ci.org/axopy/axopy.svg?branch=master
-    :target: https://travis-ci.org/axopy/axopy
-    :alt: Travis CI Status
+.. image:: https://github.com/axopy/axopy/actions/workflows/ci.yml/badge.svg
+    :target: https://github.com/axopy/axopy/actions/workflows/ci.yml
+    :alt: GitHub Actions CI testing status
 
 .. image:: https://readthedocs.org/projects/axopy/badge/?version=latest
     :target: http://axopy.readthedocs.io/en/latest/?badge=latest
