@@ -19,3 +19,4 @@ data/
 *.jpg
 *.png
 *.tiff
+/.vs
