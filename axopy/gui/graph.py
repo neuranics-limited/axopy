@@ -1,9 +1,13 @@
 """
 Widgets for plotting multi-channel signals.
 """
+import signal
 import numpy as np
 import pyqtgraph as pg
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import * #QFont,
+from PyQt5 import QtWidgets, QtCore, QtGui
+
+
 
 class SignalWidget(pg.GraphicsLayoutWidget):
     """
@@ -38,6 +42,7 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         self.yrange = yrange
         self.show_bottom = show_bottom
         self.xlabel = xlabel
+        
 
         self.setBackground(self.bg_color)
 
@@ -55,6 +60,7 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         x : array, shape = (n_samples,), optional (default: None)
             Independent variable values that will be displayed on x axis.
         """
+        
         nch, nsamp = y.shape
         if nch != self.n_channels:
             self.n_channels = nch
@@ -90,20 +96,120 @@ class SignalWidget(pg.GraphicsLayoutWidget):
                 label = "{}".format(name)
                 plot_item.setLabels(left=label)
 
-            if i > 0:
-                plot_item.setYLink(self.plot_items[0])
-
+            #if i > 0:
+                #plot_item.setYLink(self.plot_items[0])
+            plot_item.disableAutoRange(pg.ViewBox.YAxis)
+            plot_item.setYRange(*self.yrange)
             self.plot_items.append(plot_item)
             self.plot_data_items.append(plot_data_item)
 
-        self.plot_items[0].disableAutoRange(pg.ViewBox.YAxis)
-        self.plot_items[0].setYRange(*self.yrange)
+        #self.plot_items[0].disableAutoRange(pg.ViewBox.YAxis)
+        #self.plot_items[0].setYRange(*self.yrange)
+        
         if self.show_bottom == 'last':
             self.plot_items[-1].showAxis('bottom', True)
 
         if self.xlabel is not None:
             self.plot_items[-1].setLabels(bottom=self.xlabel)
 
+class RecordingButton(QtWidgets.QFrame):
+    def __init__(self, parent, visible: bool = False):
+        super().__init__(parent)
+        #diameter = 20
+        #self.qitem = QtWidgets.QGraphicsEllipseItem(-diameter/2, -diameter/2,
+                                               #diameter, diameter)
+        
+        #self.color = '#fa0202'
+        layout = QtWidgets.QHBoxLayout(self)
+        self.label = QtWidgets.QLabel('Notification', alignment=QtCore.Qt.AlignCenter)
+        layout.addWidget(self.label)
+        
+
+class StackedSignalWidget(QtWidgets.QWidget):
+    """
+    A stacked layout widget to show multiple widget types over each other, in this case both the Signal widget which plots the signal and other features which should be visible.
+    
+    Widgets stacked in this (starting from the bottom most widget):
+    - SignalWidget
+    - X axis changing?
+    - Recording button and indicator
+
+    Arguments
+    ---------
+    connectedMethods: a dictionary containing the methods to connect the buttons. This should contain the methods 
+        - "start_recording" which is connected to the recording button (opitonal)
+        - "change_window" which is connected to the x axis plot scale
+    """
+    def __init__(self, connectedMethods: dict, channelNames: list = ["Signal 1", "Signal 2"]):
+        super(StackedSignalWidget, self).__init__()
+        
+        self.stackLayout = QtWidgets.QStackedLayout()
+        self.stackLayout.setStackingMode(QtWidgets.QStackedLayout.StackAll)
+        
+
+        if "start_recording" in connectedMethods:
+            self.start_recording = connectedMethods["start_recording"]
+            
+            self.recordButton = QtWidgets.QPushButton("Record Data")
+            self.recordButton.setCheckable(True)
+            self.recordButton.clicked.connect(self.record_button_clicked)
+            #this still needs the button position
+
+            self.stackLayout.addWidget(self.recordButton)
+            
+       
+        self.change_window = connectedMethods["change_window"]
+        self.xAxisChanger = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        #x axis changer works in seconds 
+        # if we need more range it may be worth trying to make the scale nonlinear (eg logarithmic or exponential)
+        #self.xAxisChanger.setGeometry(QtCore.QRect(10,10,10,10))
+        self.xAxisChanger.setStyleSheet("""background-color: red;""")
+        self.xAxisChanger.setRange(1,60)
+        #self.xAxisChanger.setTickPosition(5)
+        self.xAxisChanger.valueChanged.connect(self.change_window)
+        #this still needs the position
+
+        self.signalWidget = SignalWidget(channel_names=channelNames,
+                                         show_bottom=True, xlabel= "Time (s)",
+                                         yrange=(-25000, 25000)
+                                            )
+
+        #set up stacked layout
+        self.stackLayout.addWidget(self.xAxisChanger)
+        self.stackLayout.addWidget(self.signalWidget)  
+        self.stackLayout.setCurrentIndex(0)
+        
+        self.setLayout(self.stackLayout)
+
+        
+        
+        
+    def enable_record_button(self):
+        self.recordButton.toggle()
+        self.recordButton.setEnabled(True)
+        
+    def record_button_clicked(self):
+        self.recordButton.toggle()
+        self.recordButton.setEnabled(False)
+        self.start_recording()
+        
+    
+    def plot(self, y, x=None) -> None:
+        """
+        Adds a window of data to the signal widget.
+
+        Previous windows are scrolled to the left, and the new data is added to
+        the end.
+
+        Parameters
+        ----------
+        y : ndarray, shape = (n_channels, n_samples)
+            Window of data to add to the end of the currently-shown data.
+        x : array, shape = (n_samples,), optional (default: None)
+            Independent variable values that will be displayed on x axis.
+        """
+        self.signalWidget.plot(y, x)
+    
 
 class BarWidget(pg.PlotWidget):
     """

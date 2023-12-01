@@ -309,3 +309,4 @@ class _SessionConfig(QtWidgets.QDialog):
             return
 
         self.done(0)
+        
