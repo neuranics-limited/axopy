@@ -111,8 +111,9 @@ class Experiment(TransmitterBase):
         # add a task view
         con = self.screen.new_container()
 
-        self.current_task.prepare_graphics(con)
+        
         self.current_task.prepare_daq(self.daqstream)
+        self.current_task.prepare_graphics(con)
         self.current_task.prepare_storage(self.storage)
         self.current_task.run()
 

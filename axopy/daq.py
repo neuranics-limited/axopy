@@ -60,6 +60,9 @@ class DaqStream(QtCore.QThread):
     def get_sample_properties(self):
         """ Allow the task structure access to device specific properties"""
         return self.device.get_sample_properties()
+    
+    def get_channels(self):
+        return self.device.CHANNELS
 
     def start(self):
         """Start the device and begin reading from it."""
