@@ -176,6 +176,9 @@ class Windower(Block):
             self._out[:, -n:] = data
 
         return self._out.copy()
+    
+    def get_data(self):
+        return self._out.copy()
 
     def _preallocate(self, n_channels):
         self._out = np.zeros((n_channels, self.length))
