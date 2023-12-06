@@ -1,7 +1,7 @@
 #this may need to be split up a bit later
 import sys
 import os
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 import collections
 from .main import get_qtapp
 
@@ -21,7 +21,8 @@ def show_yes_no_dialog(text: str, informativeText: str = "") -> bool:
     """
     app = get_qtapp() #to ensure the app has been initialized
     msgBox = QtWidgets.QMessageBox()
-    msgBox.setWindowTitle("")
+    msgBox.setWindowTitle("Dialog")
+    msgBox.setWindowIcon(QtGui.QIcon(":/icons/logo_small.png"))
     msgBox.setText(text)
     msgBox.setInformativeText(informativeText)
     msgBox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
@@ -73,7 +74,7 @@ class ConfigureSubjectName(QtWidgets.QDialog):
         app = get_qtapp()
         super(ConfigureSubjectName, self).__init__()
         self.options = {"subject" : str}
-        if taskName == "Oscilloscope":
+        if taskName != "Demo":
             self.options["read length"] = float
         self.results = {}
         self.widgets = {}
@@ -85,6 +86,8 @@ class ConfigureSubjectName(QtWidgets.QDialog):
         form_layout = QtWidgets.QFormLayout()
         form_layout.setFormAlignment(QtCore.Qt.AlignVCenter)
         main_layout.addLayout(form_layout)
+        self.setWindowTitle("Setup")
+        self.setWindowIcon(QtGui.QIcon(":/icons/logo_small.png"))
 
         for label, typ in self.options.items():
             if label == "read length":
@@ -93,7 +96,8 @@ class ConfigureSubjectName(QtWidgets.QDialog):
                 w.setDecimals(1)
                 w.setSingleStep(1.0)
                 w.setSuffix(" min")
-                w.setValue(10.0)
+                if taskName == "Oscilloscope": w.setValue(10.0)
+                else: w.setValue(1.0)
                 self.widgets[label] = w
                 form_layout.addRow(label, w)
             elif typ in {str, int, float}:
@@ -183,6 +187,8 @@ class SelectorDialog(QtWidgets.QDialog):
         form_layout.setFormAlignment(QtCore.Qt.AlignVCenter)
         main_layout.addLayout(form_layout)
         
+        self.setWindowTitle("Setup")
+        self.setWindowIcon(QtGui.QIcon(":/icons/logo_small.png"))
         
 
 
@@ -240,6 +246,9 @@ class SessionSetup(QtWidgets.QDialog):
         
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
+        
+        self.setWindowTitle("Setup")
+        self.setWindowIcon(QtGui.QIcon(":/icons/logo_small.png"))
         
         #Add text:
         self.widgets["text"] = QtWidgets.QLabel("Please select the options for the experimental setup:")

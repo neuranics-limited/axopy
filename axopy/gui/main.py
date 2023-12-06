@@ -1,5 +1,5 @@
 import sys
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from axopy import util
 from axopy.messaging import Transmitter
 import collections
@@ -141,7 +141,10 @@ class _MainWindow(QtWidgets.QMainWindow):
         self.setStatusBar(status_bar)
         self._statusbar_label = QtWidgets.QLabel("status")
         status_bar.addPermanentWidget(self._statusbar_label)
-
+        
+        self.setWindowIcon(QtGui.QIcon(":/icons/logo_small.png"))
+        self.setWindowTitle("Neuranics")
+        
         self.show()
 
     def run(self):

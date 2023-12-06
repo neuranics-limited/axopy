@@ -7,7 +7,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5.QtGui import * #QFont,
 from PyQt5 import QtWidgets, QtCore, QtGui
-
+from .assets import resources
 
 
 class SignalWidget(pg.GraphicsLayoutWidget):
@@ -99,8 +99,8 @@ class SignalWidget(pg.GraphicsLayoutWidget):
 
             #if i > 0:
                 #plot_item.setYLink(self.plot_items[0])
-            plot_item.disableAutoRange(pg.ViewBox.YAxis)
-            plot_item.setYRange(*self.yrange)
+            #plot_item.disableAutoRange(pg.ViewBox.YAxis)
+            #plot_item.setYRange(*self.yrange)
             self.plot_items.append(plot_item)
             self.plot_data_items.append(plot_data_item)
 
@@ -176,7 +176,8 @@ class GridSignalWidget(_LayoutSignalWidget):
         
         self.gridLayout = QtWidgets.QGridLayout()
         self.change_window = connectedMethods["change_window"]    
-       
+        
+        
         
 
         self.signalWidget = SignalWidget(channel_names=channelNames,
@@ -189,7 +190,64 @@ class GridSignalWidget(_LayoutSignalWidget):
         # if we need more range it may be worth trying to make the scale nonlinear (eg logarithmic or exponential)
         #self.xAxisChanger.setGeometry(QtCore.QRect(10,10,10,10))
         self.xAxisChanger.setStyleSheet("""background-color: transparent;""")
+        
 
+        self.setStyleSheet("""
+            QSlider::groove:horizontal {
+            border: 1px solid #bbb;
+            background: transparent;
+            height: 10px;
+            border-radius: 4px;
+            }
+
+            QSlider::sub-page:horizontal {
+            background: transparent;
+            background: transparent;
+            border: 1px solid #777;
+            height: 10px;
+            border-radius: 4px;
+            }
+
+            QSlider::add-page:horizontal {
+            background: transparent;
+            border: 1px solid #777;
+            height: 10px;
+            border-radius: 4px;
+            }
+
+            QSlider::handle:horizontal {
+            background: grey;
+            border: 1px solid #777;
+            width: 13px;
+            margin-top: -2px;
+            margin-bottom: -2px;
+            border-radius: 4px;
+            }
+
+            QSlider::handle:horizontal:hover {
+            background: blue;
+            border: 1px solid #444;
+            margin-top: -10px;
+            margin-bottom: -10px;               
+            border-radius: 4px;
+            }
+
+            QSlider::sub-page:horizontal:disabled {
+            background: #bbb;
+            border-color: #999;
+            }
+
+            QSlider::add-page:horizontal:disabled {
+            background: transparent;
+            border-color: #999;
+            }
+
+            QSlider::handle:horizontal:disabled {
+            background: transparent;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            }""")
+        
         self.xAxisChanger.setRange(sliderRange[0],sliderRange[1])
         self.xAxisChanger.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
         self.xAxisChanger.setTickInterval(1)
@@ -205,6 +263,8 @@ class GridSignalWidget(_LayoutSignalWidget):
             self.recordButton = QtWidgets.QPushButton("Record Data")
             self.recordButton.setCheckable(True)
             self.recordButton.clicked.connect(self.record_button_clicked)
+            self.recordButton.setIcon(QtGui.QIcon(':/icons/recording.png'))
+            self.recordButton.setToolTip("Record and save 60 sec of data")
             #self.recordButton.setStyleSheet("""background-color: white;""")
             #this still needs the button position
 
@@ -218,7 +278,12 @@ class GridSignalWidget(_LayoutSignalWidget):
         self.gridLayout.addWidget(self.label, 2,0)
         self.gridLayout.addWidget(self.signalWidget, 1, 0, 1, 8)
         
-            
+        self.logo = QtWidgets.QLabel()
+        self.pixmap = QPixmap(':/icons/logo.png')
+        #self.scaledPixmap = self.pixmap.scaled(50, 100, QtCore.Qt.KeepAspectRatio)
+        self.logo.setPixmap(self.pixmap)
+        #self.logo.setScaledContents(True)
+        self.gridLayout.addWidget(self.logo, 0 , 7)
         
         
         self.setLayout(self.gridLayout)

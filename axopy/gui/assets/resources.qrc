@@ -1,0 +1,8 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+	<qresource prefix="icons">
+		<file alias="logo.png">neuranics_logo_transparent_small.png</file>
+		<file alias="logo_small.png">neuranics_logo_circle.png</file>
+		<file alias="recording.png">red_circle.png</file>
+	</qresource>
+</RCC>
