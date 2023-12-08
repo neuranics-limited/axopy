@@ -297,7 +297,17 @@ class BufferedArray(object):
         self.pos = 0
         self.overflow = False
         self.data = numpy.empty((0, 0))
+    
+    def reset(self):
+        """Clears the buffer and resets the interator, but remakes the buffer in the same shape as initially 
 
+        Anything that was in the buffer is not retrievable.
+        """
+        self.buffer.fill(0)
+        self.pos = 0
+        self.overflow = False
+        self.data = numpy.zeros(self.buffer_dims, self.dtype)
+    
     def set_data(self):
         """Creates the data attribute.
 

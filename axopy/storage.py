@@ -174,6 +174,35 @@ class TaskWriter(object):
     def __init__(self, root):
         self.root = root
         self.trials = TrialWriter(_trials_path(self.root))
+        
+    #add method for appending
+    def append_data(self, trial):
+        """Append trial data.
+
+        This can be called multiple times, in each case the new data is added This method flushes
+        trial and array data to files for you.
+
+        **Important note**: The trial's arrays are cleared after writing, making it so that they can continue to be filled until the next append data call
+
+        Parameters
+        ----------
+        trial : Trial
+            Tral data. See :meth:`TrialWriter.write` and :class:`Trial` for
+            details.
+           
+        """
+        logging.info('saving trial {}:{}\n{}'.format(
+            trial.attrs['block'], trial.attrs['trial'], str(trial)))
+
+        self.trials.write(trial.attrs)
+
+        ind = self.trials.df.index[-1]
+        for name, array in trial.arrays.items():
+            path = _array_path(self.root, name)
+            write_csv(path, array.data, dataset=str(ind), dtype=array.dtype)
+            array.reset()
+            
+
 
     def write(self, trial):
         """Write trial data.
@@ -198,7 +227,8 @@ class TaskWriter(object):
         ind = self.trials.df.index[-1]
         for name, array in trial.arrays.items():
             path = _array_path(self.root, name)
-            write_hdf5(path, array.data, dataset=str(ind), dtype=array.dtype)
+            #write_hdf5(path, array.data, dataset=str(ind), dtype=array.dtype)
+            write_csv(path, array.data)
             array.clear()
 
     def pickle(self, obj, name):
@@ -375,6 +405,51 @@ def write_hdf5(filepath, data, dataset='data', dtype='f'):
     """
     with h5py.File(filepath, 'a') as f:
         f.create_dataset(dataset, data=data, dtype=dtype)
+        
+def append_hdf5(filepath, data, dataset='data', dtype='f'):
+    """Append data to an hdf5 file.
+
+    The data is written to a new file with a single dataset called "data" in
+    the root group. It is primarily for internal usage but you may find it
+    useful for quickly writing an array to an HDF5 file.
+
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the file to be written.
+    data : ndarray
+        NumPy array containing the data to write. The dtype, shape, etc. of the
+        resulting dataset in storage is determined by this array directly.
+    dataset : str, optional
+        Name of the dataset to create. Default is 'data'.
+    dtype : str, optional
+        Array data type. Default is 'f'.
+    """
+    with h5py.File(filepath, 'a') as f:
+        f.create_dataset(dataset, data=data, dtype=dtype)
+        
+def write_csv(filepath, data, dataset='data', dtype='f'):
+    """Write data to a comma deliminated csv file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the file to be written.
+    data : ndarray
+        NumPy array containing the data to write. The dtype, shape, etc. of the
+        resulting dataset in storage is determined by this array directly.
+    dataset : str, optional
+        Name of the dataset to create. Default is 'data'.
+    dtype : str, optional
+        Array data type. Default is 'f'.
+    """
+    #print("appending data")
+    filename = filepath.split(".")[0] + ".csv"
+    with open(filename, 'a') as f:
+            f.write('\n')
+            numpy.savetxt(f, data.transpose(), delimiter=',', newline='\n')
+   
 
 
 def storage_to_zip(path, outfile=None):

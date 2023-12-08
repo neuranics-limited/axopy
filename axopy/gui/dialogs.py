@@ -103,7 +103,10 @@ class ConfigureSubjectName(QtWidgets.QDialog):
             elif typ in {str, int, float}:
                 w = QtWidgets.QLineEdit()
                 self.widgets[label] = w
-                form_layout.addRow(label, w)
+                if label =="subject":
+                    form_layout.addRow("file name", w)
+                else:
+                    form_layout.addRow(label, w)
             elif isinstance(typ, collections.abc.Sequence):
                 w = QtWidgets.QComboBox()
                 for choice in typ:
