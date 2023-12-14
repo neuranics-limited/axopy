@@ -264,8 +264,9 @@ class SessionSetup(QtWidgets.QDialog):
         
         #in both cases the format is {type:description}
         self.daqOptions = {"Bluetooth": "A wireless connection using BLE protocols with a sampling rate of 640 samples/second", 
-                            "Wired": "Connected to the computer via USB with a sampling rate of ?? samples/second",
-                            "Noise": "Randomly generated data"
+                            "Wired XCG": "Connected to the computer via USB with a sampling rate of 640 samples/second",
+                            "Wired MCG": "Connected to the computer via USB with a sampling rate of 640 samples/second",
+                            #"Noise": "Randomly generated data"
                             }
         self.widgets["daq"] = QtWidgets.QComboBox()
         for daq in self.daqOptions:
@@ -282,7 +283,7 @@ class SessionSetup(QtWidgets.QDialog):
 
         self.taskOptions = {"Demo": "Displays the raw signal from the DAQ", 
                        "Oscilloscope": "Displays and saves the raw signal from the DAQ",
-                       "MCG Recording": "Receives the siganl from the DAQ and applying processing for relevant features",
+                       #"MCG Recording": "Receives the siganl from the DAQ and applying processing for relevant features",
                        }
         self.widgets["task"] = QtWidgets.QComboBox()
         for task in self.taskOptions:
