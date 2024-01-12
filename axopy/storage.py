@@ -175,8 +175,28 @@ class TaskWriter(object):
         self.root = root
         self.trials = TrialWriter(_trials_path(self.root))
         
+    def setup_csv(self, channels: list, nameToSave: str):
+        """ Creates the headers for the trial data
+        
+        Parameters
+        ----------
+        channels: list
+            a list containing the names of the channels recorded by the sensor
+        nameToSave: str
+            the name of the file which should be saved to, usually the data array key
+        
+        """
+        path = _array_path(self.root, nameToSave)
+        filename = path.split(".")[0] + ".csv"
+        heading  = "time(s)"
+        for channel in channels:
+            heading += f',{channel}'
+        with open(filename, 'a') as f:
+            f.write(heading)
+        
+    
     #add method for appending
-    def append_data(self, trial):
+    def append_data(self, trial, nameToSave: str = None):
         """Append trial data.
 
         This can be called multiple times, in each case the new data is added This method flushes
@@ -189,15 +209,24 @@ class TaskWriter(object):
         trial : Trial
             Tral data. See :meth:`TrialWriter.write` and :class:`Trial` for
             details.
+        nameToSave : str
+            when specified, only trial data with that name is saved
            
         """
         logging.info('saving trial {}:{}\n{}'.format(
             trial.attrs['block'], trial.attrs['trial'], str(trial)))
 
-        self.trials.write(trial.attrs)
+        self.trials.write(trial.attrs) #the trials csv is a bit useless, removed that part from the method
 
         ind = self.trials.df.index[-1]
-        for name, array in trial.arrays.items():
+        if nameToSave == None:
+            for name, array in trial.arrays.items():
+                path = _array_path(self.root, name)
+                write_csv(path, array.data, dataset=str(ind), dtype=array.dtype)
+                array.reset()
+        else:
+            name = nameToSave
+            array = trial.arrays[nameToSave]
             path = _array_path(self.root, name)
             write_csv(path, array.data, dataset=str(ind), dtype=array.dtype)
             array.reset()
@@ -222,9 +251,9 @@ class TaskWriter(object):
         logging.info('saving trial {}:{}\n{}'.format(
             trial.attrs['block'], trial.attrs['trial'], str(trial)))
 
-        self.trials.write(trial.attrs)
+        #self.trials.write(trial.attrs) #the trials csv is a bit useless
 
-        ind = self.trials.df.index[-1]
+        #ind = self.trials.df.index[-1]
         for name, array in trial.arrays.items():
             path = _array_path(self.root, name)
             #write_hdf5(path, array.data, dataset=str(ind), dtype=array.dtype)
@@ -340,7 +369,7 @@ class TrialWriter(object):
             self.data[col].append(val)
 
         self.df = pandas.DataFrame(self.data)
-        self.df.to_csv(self.filepath, index=False)
+        #self.df.to_csv(self.filepath, index=False) #the trials csv is not as useful
 
 
 #
