@@ -4,6 +4,8 @@ from axopy import util
 from axopy.messaging import Transmitter
 import collections
 from contextlib import contextmanager
+import ctypes
+import platform
 
 # This mapping from key names in the Qt namespace to axopy key names just
 # allows users to write code without any Qt stuff in it
@@ -51,6 +53,10 @@ key_map = {
 
 qt_key_map = {v: k for k, v in key_map.items()}
 
+def make_dpi_aware():
+    if int(platform.release()) >= 8:
+        ctypes.windll.shcore.SetProcessDpiAwareness(True)
+
 
 def get_qtapp():
     """Get a QApplication instance running.
@@ -80,6 +86,7 @@ def get_qtapp():
     global qtapp
     inst = QtWidgets.QApplication.instance()
     if inst is None:
+        make_dpi_aware()
         qtapp = QtWidgets.QApplication(sys.argv)
     else:
         qtapp = inst
