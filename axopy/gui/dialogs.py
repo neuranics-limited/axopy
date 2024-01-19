@@ -51,6 +51,22 @@ def check_subject_id_exists(root: str, subject: str) -> bool:
                     return True
             return False
 
+def check_if_invalid_filename(subject: str) -> bool:
+    """ Check if given string is a valid filename and does not contain illegal symbols
+    Returns
+    -------
+    bool: if the filename is invalid
+    """
+    illegalSymbols = ["#", "%", "&", "{","}","\\",">","<", "*", "?", "/", "$", "!", "'", '"',"@", "+", "`", "|", "="]
+    
+    if len(subject)>=31:
+        return True #filename is too long
+    elif any(char in subject for char in illegalSymbols):
+        return True
+    
+    return False #no problem found
+        
+
 
 class ConfigureSubjectName(QtWidgets.QDialog):
     """Based on _SessionConfig: Widget for configuring a session.
@@ -75,7 +91,7 @@ class ConfigureSubjectName(QtWidgets.QDialog):
         super(ConfigureSubjectName, self).__init__()
         self.options = {"subject" : str}
         if taskName != "Demo":
-            self.options["read length"] = float
+            self.options["duration"] = float
         self.results = {}
         self.widgets = {}
         self.root = root
@@ -90,7 +106,7 @@ class ConfigureSubjectName(QtWidgets.QDialog):
         self.setWindowIcon(QtGui.QIcon(":/icons/logo_small.png"))
 
         for label, typ in self.options.items():
-            if label == "read length":
+            if label == "duration":
                 w = QtWidgets.QDoubleSpinBox()
                 w.setRange(1,60)
                 w.setDecimals(1)
@@ -139,6 +155,15 @@ class ConfigureSubjectName(QtWidgets.QDialog):
                 self.results[label] = float(parts[0])
             else:
                 self.results[label] = str(widget.currentText())
+        
+        if 'subject' in self.options:
+            if any(self.results['subject'][0] for symbol in [" ", "_", "-", "."]):
+                self.results['subject'] = self.results['subject'][1:]
+            for char in reversed(self.results['subject']):
+                if char == " ":
+                    self.results['subject'] = self.results['subject'][:-1]
+                if char.isalnum():
+                    break
 
         if 'subject' in self.options and self.results['subject'] == '':
             QtWidgets.QMessageBox.warning(
@@ -154,7 +179,14 @@ class ConfigureSubjectName(QtWidgets.QDialog):
                 "Subject ID already exists.",
                 QtWidgets.QMessageBox.Ok)
             return
-
+        elif check_if_invalid_filename(self.results['subject']):
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Warning",
+                "Invalid file name. Please ensure the name is less than 31 characters and does not contain any of these symbols: #%&{}\\><*?",
+                QtWidgets.QMessageBox.Ok)
+            return
+        
         self.done(0)
 
        
