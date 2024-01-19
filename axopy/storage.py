@@ -476,8 +476,11 @@ def write_csv(filepath, data, dataset='data', dtype='f'):
     #print("appending data")
     filename = filepath.split(".")[0] + ".csv"
     with open(filename, 'a') as f:
-            f.write('\n')
-            numpy.savetxt(f, data.transpose(), delimiter=',', newline='\n')
+            #f.write('\n') #this was causing some problems by creating gaps in the saved data 
+            data_to_save = data.transpose()
+            if len(data_to_save[-1,:]) < 1:
+                np.delete(data_to_save, -1, 0) #ensure there are no empty rows
+            numpy.savetxt(f, data_to_save, delimiter=',', newline='\n')
    
 
 
