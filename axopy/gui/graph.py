@@ -182,7 +182,7 @@ class GridSignalWidget(_LayoutSignalWidget):
 
         self.signalWidget = SignalWidget(channel_names=channelNames,
                                          show_bottom=True, xlabel= "Time (s)",
-                                         yrange=(-25000, 25000), #bg_color="black"
+                                         yrange=(-25000, 25000), #bg_color="white"
                                             )
         sliderRange = [1,20]
         self.xAxisChanger = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -631,13 +631,13 @@ class PolarWidget(pg.GraphicsLayoutWidget):
 
 class _MultiPen(object):
 
-    MIN_HUE = 160
+    MIN_HUE = 0 #160
     HUE_INC = 20
     VAL = 200
 
     def __init__(self, n_colors):
         self.n_colors = n_colors
-        self.max_hue = self.MIN_HUE + n_colors*self.HUE_INC
+        self.max_hue = 350 #self.MIN_HUE + n_colors*self.HUE_INC
 
     def get_pen(self, index):
         return pg.intColor(
