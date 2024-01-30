@@ -61,10 +61,8 @@ def check_if_invalid_filename(subject: str) -> bool:
     
     if len(subject)>=31:
         return True #filename is too long
-    elif any(char in subject for char in illegalSymbols):
-        return True
     
-    return False #no problem found
+    return any(char in subject for char in illegalSymbols)
         
 
 
@@ -157,12 +155,12 @@ class ConfigureSubjectName(QtWidgets.QDialog):
                 self.results[label] = str(widget.currentText())
         
         if 'subject' in self.options:
-            if any(self.results['subject'][0] for symbol in [" ", "_", "-", "."]):
+            if self.results['subject'][0] in [" ", "_", "-", "."]:
                 self.results['subject'] = self.results['subject'][1:]
             for char in reversed(self.results['subject']):
                 if char == " ":
                     self.results['subject'] = self.results['subject'][:-1]
-                if char.isalnum():
+                else:
                     break
 
         if 'subject' in self.options and self.results['subject'] == '':
@@ -172,18 +170,19 @@ class ConfigureSubjectName(QtWidgets.QDialog):
                 "Subject ID must not be empty.",
                 QtWidgets.QMessageBox.Ok)
             return
-        elif check_subject_id_exists(self.root, self.results['subject']):
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Warning",
-                "Subject ID already exists.",
-                QtWidgets.QMessageBox.Ok)
-            return
         elif check_if_invalid_filename(self.results['subject']):
             QtWidgets.QMessageBox.warning(
                 self,
                 "Warning",
                 "Invalid file name. Please ensure the name is less than 31 characters and does not contain any of these symbols: #%&{}\\><*?",
+                QtWidgets.QMessageBox.Ok)
+            self.results["subject"] = ""
+            return
+        elif check_subject_id_exists(self.root, self.results['subject']):
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Warning",
+                "Subject ID already exists.",
                 QtWidgets.QMessageBox.Ok)
             return
         
