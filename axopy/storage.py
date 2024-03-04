@@ -192,6 +192,7 @@ class TaskWriter(object):
         heading  = "time(s)"
         for channel in channels:
             heading += f',{channel}'
+        heading += '\r\n'
         with open(filename, 'a') as f:
             f.write(heading)
         
