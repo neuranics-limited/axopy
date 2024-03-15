@@ -57,6 +57,18 @@ class DaqStream(QtCore.QThread):
         """Boolean value indicating whether or not the stream is running."""
         return self._running
     
+    def get_device_details(self):
+        """Attempts to retrieve data about the connected Neuranics device, returns default device properties if """
+        # this was made into its own function rather than something the task 
+        #   can access through self.device to add error handling if the attribute 
+        #   does not exist in specific DAQ implementaions
+        try:
+            deviceDetails = self.device.DEVICE_DETAILS
+        except:
+            deviceDetails = NeuranicsDevice() #ensures that there is no error if the attribute is missing from DAQ implementation
+            
+        return deviceDetails
+
     def get_sample_properties(self):
         """ Allow the task structure access to device specific properties"""
         return self.device.get_sample_properties()
@@ -482,3 +494,85 @@ class _Sleeper(object):
 
     def reset(self):
         self.last_read_time = None
+        
+class NeuranicsDevice(object):
+    """Keeps track of the hardware details of the devices
+   
+   - sampleRate (int): DAQ sample rate in samples per second 
+   - numberOfChannels (int): channels the harware is equipped with
+   - channelNames (list of str): used to label the channels in the view
+   - targetChannel (int): the main channel to see, this is the one shown in the Demo Task
+   - batteryInfoType (int): how battery is communicated by the device
+   - updatableFirmware (bool): if board has ability to update firmware remotely using a bootloader
+   - dataPacketLength (int): number of data points sent in each communication 
+   """
+   
+    def __init__(self, 
+                 sampleRate: int = 640, #default as it is the current sampleRate (Feb/2024)
+                 numberOfChannels: int = 0, 
+                 channelNames: list = [], 
+                 targetChannel:int = 0, 
+                 batteryInfoType: int = 0, 
+                 updatableFirmware: bool = False,
+                 dataPacketLength: int = 32, #default as it is the current packet length (Feb/2024)
+                 ) -> None:
+        
+        self._sampleRate = sampleRate
+        self._numberOfChannels = numberOfChannels
+        self._channelNames = channelNames
+        self._targetChannel = targetChannel
+        self._batteryInfoType = batteryInfoType
+        self._batteryStatus = -1 #this is updated manually after initialization
+        self._updatableFirmware = updatableFirmware
+        self._dataPacketLength = dataPacketLength
+       
+    #methods: only getters (all values) and setter (batteryStatus only)
+    def get_sampleRate(self) -> int:
+        """DAQ sample rate, in samples per second"""
+        return self._sampleRate
+    def get_numberOfChannels(self) -> int:
+        """number of channels transmitted by device"""
+        return self._numberOfChannels
+    def get_channelNames(self) -> list:
+        """channel names in the order of occurrance as list of strings"""
+        return self._channelNames
+    def get_targetChannel(self) -> int:
+        """Most important transmitted channel, the one to be displayed by the Demo task"""
+        return self._targetChannel
+    def get_batteryInfoType(self) -> int:
+        """ 
+        returns:
+        - 0: no battery info given
+        - 1: battery info is given as [0, 1, 2] to signify [empty, half-full, full]
+        - 2: battery info is given as a percentage
+        """
+        return self._batteryInfoType
+    
+    def get_batteryStatus(self) -> int:
+        """returns:
+            - -1: battery status not supported
+            -  0: critically low battery (0-19%)
+            -  1: low battery (20-39%)
+            -  2: medium battery (40-59%)
+            -  3: high battery (60-79%)
+            -  4: full battery (80-100%) """ 
+        return self._batteryStatus  
+    def set_batteryStatus(self, batteryStatus: int) -> None:
+        """to set:
+            - -1: battery status not supported
+            -  0: critically low battery (0-19%)
+            -  1: low battery (20-39%)
+            -  2: medium battery (40-59%)
+            -  3: high battery (60-79%)
+            -  4: full battery (80-100%) """ 
+        self._batteryStatus = batteryStatus
+        
+    def get_updatableFirmware(self) -> bool:
+        """returns true if firmware contains a bootloader and can be updated remotely"""
+        return self._updatableFirmware
+    def get_packetLength(self) -> int:
+        """ returns number of data points sent in each communication"""
+        return self._dataPacketLength
+
+    def __str__(self):
+        return f'Neuranics Device, Channels: {self._channelNames}, Sample Rate: {self._sampleRate}'

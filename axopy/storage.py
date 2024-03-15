@@ -189,9 +189,13 @@ class TaskWriter(object):
         """
         path = _array_path(self.root, nameToSave)
         filename = path.split(".")[0] + ".csv"
-        heading  = "time(s)"
-        for channel in channels:
-            heading += f',{channel}'
+        #heading  = "time(s)" #this is for when tie is saved, left out for now for smaler resulting files
+        heading = f"{channels[0]}"
+        if len(channels)>1:
+            for index,channel in enumerate(channels):
+                if index == 0:
+                    continue #we already added 0th index to heading
+                heading += f',{channel}'
         heading += '\r\n'
         with open(filename, 'a') as f:
             f.write(heading)
@@ -218,7 +222,7 @@ class TaskWriter(object):
         logging.info('saving trial {}:{}\n{}'.format(
             trial.attrs['block'], trial.attrs['trial'], str(trial)))
 
-        self.trials.write(trial.attrs) #the trials csv is a bit useless, removed that part from the method
+        self.trials.write(trial.attrs) #the trials csv is a bit useless, removed that part from the write method
 
         ind = self.trials.df.index[-1]
         if nameToSave == None:
@@ -478,11 +482,16 @@ def write_csv(filepath, data, dataset='data', dtype='f'):
     #print("appending data")
     filename = filepath.split(".")[0] + ".csv"
     with open(filename, 'a') as f:
-            #f.write('\n') #this was causing some problems by creating gaps in the saved data 
-            data_to_save = data.transpose()
-            if len(data_to_save[-1,:]) < 1:
-                np.delete(data_to_save, -1, 0) #ensure there are no empty rows
-            numpy.savetxt(f, data_to_save, delimiter=',', newline='\n')
+            #f.write('\n') #this was causing some problems by creating gaps in the saved data
+            #NOTE: Here I am assuming that the data sent to save includes a time column at column 0
+            # to reduce the created file sizes, the timestamps are not saved. 
+            data_to_save = data[1:,:].transpose()
+            try:
+                if len(data_to_save) > 0:
+                    if len(data_to_save[-1,:]) < 1:
+                        np.delete(data_to_save, -1, 0) #ensure there are no empty rows
+            finally:
+                numpy.savetxt(f, data_to_save, delimiter=',', newline='\n', fmt='%1.0f')
    
 
 

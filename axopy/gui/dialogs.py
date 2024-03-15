@@ -187,11 +187,9 @@ class ConfigureSubjectName(QtWidgets.QDialog):
             return
         
         self.done(0)
-
-       
-   
+      
 class SelectorDialog(QtWidgets.QDialog):
-    """ Dialog to ask the user to select an option from list supplied from a dictionary
+    """ Dialog to ask the user to select an option from list supplied from a list
     use run() to run the dialog and return the results in a dictionary
     
     Arguments
@@ -204,7 +202,7 @@ class SelectorDialog(QtWidgets.QDialog):
     -------
     result - string of the chosen option
     """
-    def __init__(self, text: str, options: dict, informativeText: str = "") -> None:
+    def __init__(self, text: str, options: list, informativeText: str = "") -> None:
         app = get_qtapp()
         super(SelectorDialog, self).__init__()
         self.options = options
@@ -261,7 +259,13 @@ class SessionSetup(QtWidgets.QDialog):
     
     Arguments
     ---------
-    
+    daqOptions : dict
+        a dict in the form {type:description}
+        This is the options made available to the user
+    taskOptions : dict
+        a dict in the form {type:description}
+        This is the options made available to the user
+        
     Returns
     -------
     results - dict with the options chosen by the user
@@ -272,11 +276,14 @@ class SessionSetup(QtWidgets.QDialog):
     """
 
     #this should be its own window with mutliple options
-    def __init__(self):
+    def __init__(self, daqOptions: dict, taskOptions: dict):
         app = get_qtapp()
         super(SessionSetup, self).__init__()
         self.widgets = {}
         self.results = {}
+        
+        self.daqOptions = daqOptions
+        self.taskOptions = taskOptions
         
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
@@ -293,12 +300,7 @@ class SessionSetup(QtWidgets.QDialog):
         daq_form_layout.setFormAlignment(QtCore.Qt.AlignVCenter)
         main_layout.addLayout(daq_form_layout)
         
-        #in both cases the format is {type:description}
-        self.daqOptions = {"Bluetooth": "A wireless connection using BLE protocols with a sampling rate of 640 samples/second", 
-                            "Wired XCG": "Connected to the computer via USB with a sampling rate of 640 samples/second",
-                            "Wired MCG": "Connected to the computer via USB with a sampling rate of 640 samples/second",
-                            "Noise": "Randomly generated data"
-                            }
+
         self.widgets["daq"] = QtWidgets.QComboBox()
         for daq in self.daqOptions:
             self.widgets["daq"].addItem(daq)
@@ -312,10 +314,7 @@ class SessionSetup(QtWidgets.QDialog):
         task_form_layout.setFormAlignment(QtCore.Qt.AlignVCenter)
         main_layout.addLayout(task_form_layout)
 
-        self.taskOptions = {"Demo": "Displays the raw signal from the DAQ", 
-                       "Oscilloscope": "Displays and saves the raw signal from the DAQ",
-                       "MCG Recording": "Receives the siganl from the DAQ and applying processing for relevant features",
-                       }
+
         self.widgets["task"] = QtWidgets.QComboBox()
         for task in self.taskOptions:
             self.widgets["task"].addItem(task)
@@ -346,4 +345,100 @@ class SessionSetup(QtWidgets.QDialog):
             if type(widget) is QtWidgets.QComboBox:
                 self.results[label] = str(widget.currentText())
         
+        self.done(0)
+        
+class ConfigureSignalMixing(QtWidgets.QDialog):
+    """Widget for configuring the details about a mixable signal
+    This was made into its own class rather than just using the standard _SessionConfig as 
+    it requires more checks to ensure the data is complete (ie if signal mixing is required, the channel ratios should be filled appropriately)
+    This is also not part of the original selector to select the file name as the number of channels depends on the loaded data shape.
+
+    Shows a form layout with the specified options. Options are passed as a
+    dictionary with option labels as keys and option types as values. The value
+    can also be a sequence of strings, which are shown in a combo box. Use
+    ``run()`` to run the dialog and return the results in a dictionary.
+    
+    Required fields in options:
+     - mixSignal (bool) : defines if the signal will be mixed or not
+     - channel# ratio (float) : one for each channel to be mixed, defines the multiplier of the signal being added
+     
+    Returns the fields:
+    - mixSignal (bool)
+    - ratios (list of float): a collated version of the results in channel#
+    """
+
+    def __init__(self, options):
+        app = get_qtapp()
+        super(ConfigureSignalMixing, self).__init__()
+        self.options = options
+        self.results = {}
+        self.widgets = {}
+
+        main_layout = QtWidgets.QVBoxLayout()
+        self.setLayout(main_layout)
+
+        form_layout = QtWidgets.QFormLayout()
+        form_layout.setFormAlignment(QtCore.Qt.AlignVCenter)
+        main_layout.addLayout(form_layout)
+        
+        self.setWindowTitle("Signal Mixing Setup")
+        self.setWindowIcon(QtGui.QIcon(":/icons/logo_small.png"))
+
+        for label, typ in options.items():
+            if typ in {str, int, float}:
+                w = QtWidgets.QLineEdit()
+                self.widgets[label] = w
+                form_layout.addRow(label, w)
+            elif isinstance(typ, collections.abc.Sequence):
+                w = QtWidgets.QComboBox()
+                for choice in typ:
+                    w.addItem(str(choice))
+                self.widgets[label] = w
+                form_layout.addRow(label, w)
+            elif typ == bool:
+                w = QtWidgets.QCheckBox()
+                self.widgets[label] = w
+                form_layout.addRow(label, w)
+            else:
+                raise TypeError("option {}({}) not a supported type".format(
+                    label, typ))
+        self.results['ratios'] = [] #make sure this is set up before results are added
+        button = QtWidgets.QPushButton("Ok")
+        main_layout.addWidget(QtWidgets.QLabel("The reference signal will be multiplied by the channel ratios and added to the channels."))
+        main_layout.addWidget(button)
+        button.clicked.connect(self._on_button_click)
+
+        self.show()
+
+    def run(self):
+        self.exec_()
+        return self.results
+
+    def _on_button_click(self):
+        for label, widget in self.widgets.items():
+            t = self.options[label]
+            if t is str:
+                self.results[label] = str(widget.text())
+            elif t is int:
+                self.results[label] = int(widget.text())
+            elif t is float:
+                if self.results['Mix Signal'] and len(widget.text())<1:
+                    QtWidgets.QMessageBox.warning(
+                        self,
+                        "Warning",
+                        "Please fill out the ratio for each channel",
+                        QtWidgets.QMessageBox.Ok)
+                    self.results['ratios'] = [] #ensure the setting is cleared for next try
+                    return
+                elif len(widget.text())<1:
+                    pass
+                else:
+                    self.results['ratios'].append(float(widget.text()))  
+            elif t is bool:
+                self.results[label] = widget.isChecked()
+            else:
+                self.results[label] = str(widget.currentText())
+
+        
+
         self.done(0)
