@@ -25,13 +25,17 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         Background color. Default is None (i.e., default background color).
     y_range : tuple, optional
         Y-axis range. Default is (-1, 1).
-    show_bottom : boolean or str
+    show_bottom : boolean or str, optional
         Whether to show x-axis in plots. If set to ``last``, x-axis will only
         be visible in the last row.
+    xlabel : str, optional
+        the label to print under the graph
+    line_color : str
+        colour of all lines on the plot, if left as None it will make the lines multicolored
     """
 
     def __init__(self, channel_names=None, bg_color=None, yrange=(-1,1),
-                 show_bottom=False, xlabel=None):
+                 show_bottom=False, xlabel=None, line_color=None):
         super(SignalWidget, self).__init__()
 
         self.plot_items = []
@@ -43,6 +47,7 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         self.yrange = yrange
         self.show_bottom = show_bottom
         self.xlabel = xlabel
+        self.line_color = line_color
         
 
         self.setBackground(self.bg_color)
@@ -84,9 +89,12 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         self.plot_data_items = []
         pen = _MultiPen(self.n_channels)
         for i, name in zip(range(self.n_channels), self.channel_names):
+            if self.line_color == None:
+                lnColor = pen.get_pen(i) #set line color to multiple colors
+            else:
+                lnColor = pg.mkColor(self.line_color)
             plot_item = self.addPlot(row=i, col=0)
-            plot_data_item = plot_item.plot(pen=pen.get_pen(i), antialias=True)
-
+            plot_data_item = plot_item.plot(antialias=True, pen=lnColor) # get pen(i) for multiple colors
             if self.show_bottom is not True:
                 plot_item.showAxis('bottom', False)
             plot_item.showGrid(y=True, alpha=0.5)
@@ -170,8 +178,11 @@ class GridSignalWidget(_LayoutSignalWidget):
     connectedMethods: a dictionary containing the methods to connect the buttons. This should contain the methods 
         - "start_recording" which is connected to the recording button (opitonal)
         - "change_window" which is connected to the x axis plot scale
+    channelNames : a list containing the strings of names for each signal shown on screen
+    showLogo : bool to say if this qidget should show the logo
+        
     """
-    def __init__(self, connectedMethods: dict, channelNames: list = ["Signal 1", "Signal 2"]):
+    def __init__(self, connectedMethods: dict, channelNames: list = ["Signal 1", "Signal 2"], showLogo: bool = True, lineColor:str = None):
         super(GridSignalWidget, self).__init__()
         
         self.gridLayout = QtWidgets.QGridLayout()
@@ -182,7 +193,8 @@ class GridSignalWidget(_LayoutSignalWidget):
 
         self.signalWidget = SignalWidget(channel_names=channelNames,
                                          show_bottom=True, xlabel= "Time (s)",
-                                         yrange=(-25000, 25000), #bg_color="white"
+                                         yrange=(-25000, 25000), #bg_color="white", 
+                                         line_color=lineColor
                                             )
         sliderRange = [1,20]
         self.xAxisChanger = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -193,6 +205,7 @@ class GridSignalWidget(_LayoutSignalWidget):
         
 
         self.setStyleSheet("""
+                           
             QSlider::groove:horizontal {
             border: 1px solid #bbb;
             background: transparent;
@@ -281,10 +294,12 @@ class GridSignalWidget(_LayoutSignalWidget):
         self.logo = QtWidgets.QLabel()
         self.pixmap = QPixmap(':/icons/logo.png')
         #self.scaledPixmap = self.pixmap.scaled(50, 100, QtCore.Qt.KeepAspectRatio)
-        self.logo.setPixmap(self.pixmap)
+        if showLogo:
+            self.logo.setPixmap(self.pixmap)
+        else:
+            self.logo.setFixedHeight(self.pixmap.height())
         #self.logo.setScaledContents(True)
         self.gridLayout.addWidget(self.logo, 0 , 7)
-        
         
         self.setLayout(self.gridLayout)
 

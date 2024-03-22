@@ -18,7 +18,7 @@ class Canvas(QtWidgets.QGraphicsView):
     border_width = 0.01
 
     default_border_color = '#444444'
-    default_bg_color = '#dddddd'
+    default_bg_color = '#ffffff'
 
     def __init__(self, draw_border=True, bg_color=None, border_color=None,
                  parent=None, invert_x=False, invert_y=False):

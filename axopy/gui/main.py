@@ -151,6 +151,7 @@ class _MainWindow(QtWidgets.QMainWindow):
         
         self.setWindowIcon(QtGui.QIcon(":/icons/logo_small.png"))
         self.setWindowTitle("Neuranics")
+        self.setStyleSheet("""background-color: white;""")
         
         self.show()
 
@@ -177,6 +178,7 @@ class _MainWindow(QtWidgets.QMainWindow):
         If the container is already somewhere in the stack, it is just made
         visible, otherwise it is added to the stack.
         """
+        
         if self._layout.indexOf(container) == -1:
             self._layout.addWidget(container)
         self._layout.setCurrentWidget(container)
